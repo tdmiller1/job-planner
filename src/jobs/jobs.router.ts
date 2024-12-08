@@ -39,6 +39,11 @@ jobsRouter.put('/:id', async (req, res) => {
 jobsRouter.patch('/:id', async (req, res) => {
   const jobsService = new JobsService(jobsRepository);
   try {
+    console.log(
+      `Received request to partially update job: ${
+        req.params.id
+      } body: ${JSON.stringify(req.body)}`
+    );
     const updatedJob = await jobsService.partialUpdateJob(
       parseInt(req.params.id, 10),
       req.body

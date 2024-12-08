@@ -16,6 +16,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+app.use((req, res, next) => {
+  console.log(`Received request: ${req.method} ${req.path}`);
+  console.log(`Request body: ${JSON.stringify(req.body)}`);
+  next();
+});
+
 app.use('/api/jobs', jobsRouter);
 
 app.listen(PORT, () => {

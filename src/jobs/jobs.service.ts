@@ -29,6 +29,7 @@ export class JobsService {
    * @returns The job with the given ID.
    */
   getJobById(id: number) {
+    this.validateId(id);
     return this.jobsRepository.getJobById(id);
   }
 
@@ -39,6 +40,7 @@ export class JobsService {
    * @param data.name - The name of the job.
    * @param data.draftingHours - The number of drafting hours required.
    * @param data.orderedDate - The date the job was ordered (ISO-8601 format).
+   * @param data.notes - Additional notes about the job (optional).
    * @throws Error if any required fields are missing or if orderedDate is not a valid ISO-8601 date time string.
    * @returns The created job.
    */
@@ -47,6 +49,7 @@ export class JobsService {
     name: string;
     draftingHours: number;
     orderedDate: string;
+    notes?: string;
   }) {
     this.validateFullJob(data);
 
@@ -61,6 +64,7 @@ export class JobsService {
    * @param data.name - The name of the job.
    * @param data.draftingHours - The number of drafting hours required.
    * @param data.orderedDate - The date the job was ordered (ISO-8601 format).
+   * @param data.notes - Additional notes about the job (optional).
    * @returns The updated job.
    */
   updateJob(
@@ -70,8 +74,10 @@ export class JobsService {
       name: string;
       draftingHours: number;
       orderedDate: string;
+      notes?: string;
     }
   ) {
+    this.validateId(id);
     this.validateFullJob(data);
 
     return this.jobsRepository.updateJob(id, data);
@@ -85,6 +91,7 @@ export class JobsService {
    * @param data.name - The name of the job (optional).
    * @param data.draftingHours - The number of drafting hours required (optional).
    * @param data.orderedDate - The date the job was ordered (ISO-8601 format) (optional).
+   * @param data.notes - Additional notes about the job (optional).
    * @returns The updated job.
    */
   partialUpdateJob(
@@ -94,8 +101,10 @@ export class JobsService {
       name?: string;
       draftingHours?: number;
       orderedDate?: string;
+      notes?: string;
     }
   ) {
+    this.validateId(id);
     this.validatePartialJob(data);
 
     return this.jobsRepository.partialUpdateJob(id, data);
@@ -107,7 +116,17 @@ export class JobsService {
    * @returns The deleted job.
    */
   deleteJob(id: number) {
+    this.validateId(id);
     return this.jobsRepository.deleteJob(id);
+  }
+
+  /**
+   * Validates the ID of a job.
+   * @param id - The ID to validate.
+   * @throws Error if the ID is not a positive number.
+   */
+  private validateId(id: number) {
+    assert.ok(id > 0, 'ID must be a positive number');
   }
 
   /**
@@ -117,6 +136,7 @@ export class JobsService {
    * @param data.name - The name of the job.
    * @param data.draftingHours - The number of drafting hours required.
    * @param data.orderedDate - The date the job was ordered (ISO-8601 format).
+   * @param data.notes - Additional notes about the job (optional).
    * @throws Error if any required fields are missing or if orderedDate is not a valid ISO-8601 date time string.
    */
   private validateFullJob(data: {
@@ -124,6 +144,7 @@ export class JobsService {
     name: string;
     draftingHours: number;
     orderedDate: string;
+    notes?: string;
   }) {
     assert.ok(data.managerId, 'Manager ID is required');
     assert.ok(data.name, 'Name is required');
@@ -142,6 +163,7 @@ export class JobsService {
    * @param data.name - The name of the job (optional).
    * @param data.draftingHours - The number of drafting hours required (optional).
    * @param data.orderedDate - The date the job was ordered (ISO-8601 format) (optional).
+   * @param data.notes - Additional notes about the job (optional).
    * @throws Error if any provided fields are invalid.
    */
   private validatePartialJob(data: {
@@ -149,7 +171,9 @@ export class JobsService {
     name?: string;
     draftingHours?: number;
     orderedDate?: string;
+    notes?: string;
   }) {
+    console.log(`ValdiatePartialJob: ${JSON.stringify(data)}`);
     if (data.managerId !== undefined) {
       assert.ok(
         typeof data.managerId === 'number',
@@ -171,5 +195,14 @@ export class JobsService {
         'Ordered date must be a valid ISO-8601 date time string'
       );
     }
+
+    assert.ok(
+      data.managerId !== undefined ||
+        data.name !== undefined ||
+        data.draftingHours !== undefined ||
+        data.orderedDate !== undefined ||
+        data.notes !== undefined,
+      'At least one field must be provided'
+    );
   }
 }
