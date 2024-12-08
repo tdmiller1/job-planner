@@ -2,6 +2,7 @@ import * as dotenv from 'dotenv';
 import express from 'express';
 import cors from 'cors';
 import { jobsRouter } from './jobs/jobs.router';
+import { employeesRouter } from './employees/employees.router';
 
 dotenv.config();
 
@@ -23,6 +24,7 @@ app.use((req, res, next) => {
 });
 
 app.use('/api/jobs', jobsRouter);
+app.use('/api/employees', employeesRouter);
 
 app.listen(PORT, () => {
   console.log(`Listening on port ${PORT}`);

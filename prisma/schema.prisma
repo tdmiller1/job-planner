@@ -25,7 +25,7 @@ model CrewForJob {
   id         Int      @id @default(autoincrement())
   employeeId Int
   jobId      Int?
-  employee   Employee @relation(fields: [employeeId], references: [id])
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
   job        Job?     @relation(fields: [jobId], references: [id])
 }
 
