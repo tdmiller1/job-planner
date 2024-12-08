@@ -7,7 +7,8 @@
   },
   "scripts": {
     "dev": "nodemon src/index.ts",
-    "db:reset": "npx prisma db push --force-reset && npx prisma db seed"
+    "db:reset": "npx prisma db push --force-reset && npx prisma db seed",
+    "db:sync": "npx prisma db push"
   },
   "dependencies": {
     "@prisma/client": "^6.0.1",
