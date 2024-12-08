@@ -5,6 +5,7 @@ type JobRead = {
   name: string;
   updatedAt: Date;
   draftingHours: number;
+  notes: string | null;
 };
 
 type EmployeeRead = {
@@ -15,9 +16,7 @@ type EmployeeRead = {
 
 type JobWithDetails = JobRead & {
   Manager: EmployeeRead;
-  CrewForJob: Array<{
-    employee: EmployeeRead;
-  }>;
+  CrewForJob: Array<EmployeeRead>;
 };
 
 type JobWrite = {
@@ -30,26 +29,52 @@ type JobWrite = {
 
 export class JobsRepository {
   async getAllJobs(): Promise<Array<JobWithDetails>> {
-    return await db.job.findMany({
-      select: {
-        id: true,
-        name: true,
-        updatedAt: true,
-        draftingHours: true,
-        Manager: true,
-        CrewForJob: {
-          select: {
-            employee: true,
+    return await db.job
+      .findMany({
+        select: {
+          id: true,
+          name: true,
+          updatedAt: true,
+          draftingHours: true,
+          Manager: true,
+          notes: true,
+          CrewForJob: {
+            select: {
+              employee: true,
+            },
           },
         },
-      },
-    });
+      })
+      .then((jobs) =>
+        jobs.map((job) => ({
+          ...job,
+          CrewForJob: job.CrewForJob.map(({ employee }) => ({ ...employee })),
+        }))
+      );
   }
 
-  async getJobById(id: number): Promise<JobRead> {
-    return await db.job.findUniqueOrThrow({
-      where: { id },
-    });
+  async getJobById(id: number): Promise<JobWithDetails> {
+    return await db.job
+      .findUniqueOrThrow({
+        where: { id },
+        select: {
+          id: true,
+          name: true,
+          updatedAt: true,
+          draftingHours: true,
+          Manager: true,
+          notes: true,
+          CrewForJob: {
+            select: {
+              employee: true,
+            },
+          },
+        },
+      })
+      .then((job) => ({
+        ...job,
+        CrewForJob: job.CrewForJob.map(({ employee }) => ({ ...employee })),
+      }));
   }
 
   async createJob(data: JobWrite): Promise<JobRead> {
@@ -74,6 +99,7 @@ export class JobsRepository {
     data: Partial<JobWrite>
   ): Promise<JobRead> {
     try {
+      console.log(`Updating job: ${id} with data: ${JSON.stringify(data)}`);
       return await db.job.update({
         where: { id },
         data,
