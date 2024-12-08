@@ -1,6 +1,6 @@
 import { db } from '../utils/db.server';
 
-type JobRead = {
+export type JobRead = {
   id: number;
   name: string;
   updatedAt: Date;
@@ -14,7 +14,7 @@ type EmployeeRead = {
   lastName: string | null;
 };
 
-type JobWithDetails = JobRead & {
+export type JobWithDetails = JobRead & {
   Manager: EmployeeRead;
   CrewForJob: Array<EmployeeRead>;
 };
@@ -25,6 +25,12 @@ type JobWrite = {
   draftingHours: number;
   orderedDate: string;
   notes?: string;
+};
+
+export type CrewForJobRead = {
+  id: number;
+  employeeId: number;
+  jobId: number;
 };
 
 export class JobsRepository {

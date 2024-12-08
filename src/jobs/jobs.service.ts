@@ -173,7 +173,6 @@ export class JobsService {
     orderedDate?: string;
     notes?: string;
   }) {
-    console.log(`ValdiatePartialJob: ${JSON.stringify(data)}`);
     if (data.managerId !== undefined) {
       assert.ok(
         typeof data.managerId === 'number',
