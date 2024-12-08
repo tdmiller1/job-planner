@@ -6,7 +6,8 @@
     "seed": "ts-node prisma/seed.ts"
   },
   "scripts": {
-    "dev": "nodemon src/index.ts"
+    "dev": "nodemon src/index.ts",
+    "db:reset": "npx prisma db push --force-reset && npx prisma db seed"
   },
   "dependencies": {
     "@prisma/client": "^6.0.1",
