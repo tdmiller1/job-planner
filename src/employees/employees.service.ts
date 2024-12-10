@@ -1,14 +1,12 @@
 import assert from 'assert';
 import { EmployeesRepository, EmployeeWrite } from './employees.repository';
 
-// Create errors for the service to throw
-
 class EmployeeServiceError extends Error {
   private status: number = 500;
 
   constructor({ message, status }: { message: string; status?: number }) {
     super();
-    this.name = 'EmployeeNotFoundError';
+    this.name = 'EmployeeServiceError';
     this.message = message;
     this.status = status || this.status;
   }

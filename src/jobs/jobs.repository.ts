@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { db } from '../utils/db.server';
 
 export type JobRead = {
@@ -6,6 +7,7 @@ export type JobRead = {
   updatedAt: Date;
   draftingHours: number;
   notes: string | null;
+  orderedDate: Date;
 };
 
 type EmployeeRead = {
@@ -44,6 +46,7 @@ export class JobsRepository {
           draftingHours: true,
           Manager: true,
           notes: true,
+          orderedDate: true,
           CrewForJob: {
             select: {
               employee: true,
@@ -70,6 +73,7 @@ export class JobsRepository {
           draftingHours: true,
           Manager: true,
           notes: true,
+          orderedDate: true,
           CrewForJob: {
             select: {
               employee: true,
@@ -118,6 +122,63 @@ export class JobsRepository {
   async deleteJob(id: number): Promise<JobRead> {
     return await db.job.delete({
       where: { id },
+    });
+  }
+
+  getTrackableActions(): Array<string> {
+    return ['create', 'update', 'updateMany', 'delete'];
+  }
+
+  async enableAuditTracking(
+    params: Prisma.MiddlewareParams,
+    result: JobRead & { managerId: number }
+  ) {
+    if (!params.action || !this.getTrackableActions().includes(params.action)) {
+      return;
+    }
+    switch (params.action) {
+      case 'create':
+        this.trackSingle(params, result);
+        break;
+      case 'update':
+        this.trackSingle(params, result);
+        break;
+      case 'updateMany':
+        this.trackUpdateMany(params);
+        break;
+      case 'delete':
+        this.trackSingle(params, result);
+        break;
+      default:
+        break;
+    }
+  }
+
+  private async trackSingle(
+    params: Prisma.MiddlewareParams,
+    result: JobRead & { managerId: number }
+  ) {
+    const { id: jobId, ...rest } = result;
+    const auditJob = {
+      action: params.action.toUpperCase(),
+      jobId,
+      ...rest,
+    };
+    await db.auditJob.create({ data: auditJob });
+  }
+
+  private async trackUpdateMany(params: Prisma.MiddlewareParams) {
+    const updatedJobs = await db.job.findMany({
+      where: params.args.where,
+    });
+    updatedJobs.forEach(async (job) => {
+      const { id: jobId, ...rest } = job;
+      const auditJob = {
+        action: params.action.toUpperCase(),
+        jobId,
+        ...rest,
+      };
+      await db.auditJob.create({ data: auditJob });
     });
   }
 }

@@ -6,6 +6,17 @@ import { EmployeesRepository } from '../employees/employees.repository';
 const employeesRepository = new EmployeesRepository();
 const employeesService = new EmployeesService(employeesRepository);
 
+class JobServiceError extends Error {
+  private status: number = 500;
+
+  constructor({ message, status }: { message: string; status?: number }) {
+    super();
+    this.name = 'JobServiceError';
+    this.message = message;
+    this.status = status || this.status;
+  }
+}
+
 /**
  * Service for managing jobs.
  */
@@ -41,8 +52,7 @@ export class JobsService {
    * @returns The job with the given ID.
    */
   async getJobById(id: number) {
-    await this.validateId(id);
-    return this.jobsRepository.getJobById(id);
+    return this.getJobFromRepository(id);
   }
 
   /**
@@ -89,7 +99,7 @@ export class JobsService {
       notes?: string;
     }
   ) {
-    await this.validateId(id);
+    await this.validateJobById(id);
     await this.validateFullJob(data);
 
     return this.jobsRepository.updateJob(id, data);
@@ -116,7 +126,7 @@ export class JobsService {
       notes?: string;
     }
   ) {
-    await this.validateId(id);
+    await this.validateJobById(id);
     await this.validatePartialJob(data);
 
     return this.jobsRepository.partialUpdateJob(id, data);
@@ -128,8 +138,33 @@ export class JobsService {
    * @returns The deleted job.
    */
   async deleteJob(id: number) {
-    await this.validateId(id);
+    await this.validateJobById(id);
     return this.jobsRepository.deleteJob(id);
+  }
+
+  /**
+   * Retrieves a employee by its ID from the repository.
+   * @param id - The ID of the employee to retrieve.
+   * @returns The employee with the given ID.
+   */
+  private getJobFromRepository(id: number) {
+    return this.jobsRepository.getJobById(id).catch((e) => {
+      console.log('MESSAGE', e.message);
+      if (
+        e.message.includes('Expected a record, found none.') ||
+        e.message.includes('Record to delete does not exist.')
+      ) {
+        throw new JobServiceError({
+          message: `Job with ID ${id} not found`,
+          status: 404,
+        });
+      }
+    });
+  }
+
+  private async validateJobById(id: number) {
+    await this.validateId(id);
+    await this.getJobById(id);
   }
 
   /**

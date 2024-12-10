@@ -4,12 +4,29 @@ import cors from 'cors';
 import { jobsRouter } from './jobs/jobs.router';
 import { employeesRouter } from './employees/employees.router';
 import { formattedError } from './utils/error';
+import { db } from './utils/db.server';
+import jobsRepository, { JobsRepository } from './jobs/jobs.repository';
 
 dotenv.config();
 
 if (!process.env.PORT) {
   process.exit(1);
 }
+
+db.$use(async (params, next) => {
+  const result = await next(params);
+
+  const modelsToTrack = ['Job'];
+
+  if (params.model && params.action && modelsToTrack.includes(params.model)) {
+    switch (params.model) {
+      case 'Job':
+        await jobsRepository.enableAuditTracking(params, result);
+    }
+  }
+
+  return result;
+});
 
 const PORT: number = parseInt(process.env.PORT as string, 10);
 

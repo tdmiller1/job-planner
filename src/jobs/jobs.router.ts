@@ -59,6 +59,6 @@ jobsRouter.delete('/:id', async (req, res, next) => {
 
   jobsService
     .deleteJob(parseInt(req.params.id, 10))
-    .then(() => res.status(204))
+    .then(() => res.status(204).end())
     .catch(next);
 });
