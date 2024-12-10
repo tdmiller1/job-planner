@@ -5,81 +5,58 @@ import employeesRepository from './employees.repository';
 export const employeesRouter = Router();
 
 // Get all employees
-employeesRouter.get('/', async (req, res) => {
+employeesRouter.get('/', async (req, res, next) => {
   const employeesService = new EmployeesService(employeesRepository);
-  try {
-    res.json(await employeesService.getAllEmployees());
-  } catch (error: any) {
-    console.error(error);
-    res.status(500).json({ error: error.message });
-  }
+  employeesService
+    .getAllEmployees()
+    .then((employees) => res.status(200).json({ employees }))
+    .catch(next);
 });
 
 // Get employee by id
-employeesRouter.get('/:id', async (req, res) => {
+employeesRouter.get('/:id', async (req, res, next) => {
   const employeesService = new EmployeesService(employeesRepository);
-  try {
-    res.json(
-      await employeesService.getEmployeeById(parseInt(req.params.id, 10))
-    );
-  } catch (error: any) {
-    console.error(error);
-    res.status(500).json({ error: error.message });
-  }
+  employeesService
+    .getEmployeeById(parseInt(req.params.id, 10))
+    .then((employee) => res.status(200).json({ ...employee }))
+    .catch(next);
 });
 
 // Create employee
-employeesRouter.post('/', async (req, res) => {
+employeesRouter.post('/', async (req, res, next) => {
   const employeesService = new EmployeesService(employeesRepository);
-  try {
-    res.json(await employeesService.createEmployee(req.body));
-  } catch (error: any) {
-    console.error(error);
-    res.status(500).json({ error: error.message });
-  }
+  employeesService
+    .createEmployee(req.body)
+    .then((employee) => res.status(201).json({ ...employee }))
+    .catch(next);
 });
 
 // Update employee
-employeesRouter.put('/:id', async (req, res) => {
+employeesRouter.put('/:id', async (req, res, next) => {
   const employeesService = new EmployeesService(employeesRepository);
-  try {
-    res.json(
-      await employeesService.updateEmployee(
-        parseInt(req.params.id, 10),
-        req.body
-      )
-    );
-  } catch (error: any) {
-    console.error(error);
-    res.status(500).json({ error: error.message });
-  }
+
+  employeesService
+    .updateEmployee(parseInt(req.params.id, 10), req.body)
+    .then((employee) => res.status(200).json({ ...employee }))
+    .catch(next);
 });
 
 // Partially update employee
-employeesRouter.patch('/:id', async (req, res) => {
+employeesRouter.patch('/:id', async (req, res, next) => {
   const employeesService = new EmployeesService(employeesRepository);
-  try {
-    res.json(
-      await employeesService.partialUpdateEmployee(
-        parseInt(req.params.id, 10),
-        req.body
-      )
-    );
-  } catch (error: any) {
-    console.error(error);
-    res.status(500).json({ error: error.message });
-  }
+
+  employeesService
+    .partialUpdateEmployee(parseInt(req.params.id, 10), req.body)
+    .then((employee) => res.status(200).json({ ...employee }))
+    .catch(next);
 });
 
 // Delete employee
-employeesRouter.delete('/:id', async (req, res) => {
+employeesRouter.delete('/:id', async (req, res, next) => {
   const employeesService = new EmployeesService(employeesRepository);
-  try {
-    res.json(
-      await employeesService.deleteEmployee(parseInt(req.params.id, 10))
-    );
-  } catch (error: any) {
-    console.error(error);
-    res.status(500).json({ error: error.message });
-  }
+
+  employeesService
+    .deleteEmployee(parseInt(req.params.id, 10))
+    .then(() => res.status(204).end())
+    .catch(next);
 });

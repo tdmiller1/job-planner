@@ -1,11 +1,34 @@
 import assert from 'assert';
 import { JobsRepository } from './jobs.repository';
+import { EmployeesService } from '../employees/employees.service';
+import { EmployeesRepository } from '../employees/employees.repository';
+
+const employeesRepository = new EmployeesRepository();
+const employeesService = new EmployeesService(employeesRepository);
+
+class JobServiceError extends Error {
+  private status: number = 500;
+
+  constructor({ message, status }: { message: string; status?: number }) {
+    super();
+    this.name = 'JobServiceError';
+    this.message = message;
+    this.status = status || this.status;
+  }
+}
 
 /**
  * Service for managing jobs.
  */
 export class JobsService {
   private jobsRepository: JobsRepository;
+  private validJobFields = [
+    'managerId',
+    'name',
+    'draftingHours',
+    'orderedDate',
+    'notes',
+  ];
 
   /**
    * Creates an instance of JobsService.
@@ -19,7 +42,7 @@ export class JobsService {
    * Retrieves all jobs.
    * @returns An array of all jobs.
    */
-  getJobs() {
+  async getJobs() {
     return this.jobsRepository.getAllJobs();
   }
 
@@ -28,9 +51,8 @@ export class JobsService {
    * @param id - The ID of the job to retrieve.
    * @returns The job with the given ID.
    */
-  getJobById(id: number) {
-    this.validateId(id);
-    return this.jobsRepository.getJobById(id);
+  async getJobById(id: number) {
+    return this.getJobFromRepository(id);
   }
 
   /**
@@ -44,14 +66,14 @@ export class JobsService {
    * @throws Error if any required fields are missing or if orderedDate is not a valid ISO-8601 date time string.
    * @returns The created job.
    */
-  createJob(data: {
+  async createJob(data: {
     managerId: number;
     name: string;
     draftingHours: number;
     orderedDate: string;
     notes?: string;
   }) {
-    this.validateFullJob(data);
+    await this.validateFullJob(data);
 
     return this.jobsRepository.createJob(data);
   }
@@ -67,7 +89,7 @@ export class JobsService {
    * @param data.notes - Additional notes about the job (optional).
    * @returns The updated job.
    */
-  updateJob(
+  async updateJob(
     id: number,
     data: {
       managerId: number;
@@ -77,8 +99,8 @@ export class JobsService {
       notes?: string;
     }
   ) {
-    this.validateId(id);
-    this.validateFullJob(data);
+    await this.validateJobById(id);
+    await this.validateFullJob(data);
 
     return this.jobsRepository.updateJob(id, data);
   }
@@ -94,7 +116,7 @@ export class JobsService {
    * @param data.notes - Additional notes about the job (optional).
    * @returns The updated job.
    */
-  partialUpdateJob(
+  async partialUpdateJob(
     id: number,
     data: {
       managerId?: number;
@@ -104,8 +126,8 @@ export class JobsService {
       notes?: string;
     }
   ) {
-    this.validateId(id);
-    this.validatePartialJob(data);
+    await this.validateJobById(id);
+    await this.validatePartialJob(data);
 
     return this.jobsRepository.partialUpdateJob(id, data);
   }
@@ -115,9 +137,34 @@ export class JobsService {
    * @param id - The ID of the job to delete.
    * @returns The deleted job.
    */
-  deleteJob(id: number) {
-    this.validateId(id);
+  async deleteJob(id: number) {
+    await this.validateJobById(id);
     return this.jobsRepository.deleteJob(id);
+  }
+
+  /**
+   * Retrieves a employee by its ID from the repository.
+   * @param id - The ID of the employee to retrieve.
+   * @returns The employee with the given ID.
+   */
+  private getJobFromRepository(id: number) {
+    return this.jobsRepository.getJobById(id).catch((e) => {
+      console.log('MESSAGE', e.message);
+      if (
+        e.message.includes('Expected a record, found none.') ||
+        e.message.includes('Record to delete does not exist.')
+      ) {
+        throw new JobServiceError({
+          message: `Job with ID ${id} not found`,
+          status: 404,
+        });
+      }
+    });
+  }
+
+  private async validateJobById(id: number) {
+    await this.validateId(id);
+    await this.getJobById(id);
   }
 
   /**
@@ -132,21 +179,28 @@ export class JobsService {
   /**
    * Validates the full job data.
    * @param data - The job data to validate.
-   * @param data.managerId - The ID of the manager.
    * @param data.name - The name of the job.
    * @param data.draftingHours - The number of drafting hours required.
    * @param data.orderedDate - The date the job was ordered (ISO-8601 format).
    * @param data.notes - Additional notes about the job (optional).
    * @throws Error if any required fields are missing or if orderedDate is not a valid ISO-8601 date time string.
    */
-  private validateFullJob(data: {
-    managerId: number;
+  private async validateFullJob(data: {
     name: string;
     draftingHours: number;
     orderedDate: string;
+    managerId: number;
     notes?: string;
   }) {
-    assert.ok(data.managerId, 'Manager ID is required');
+    // If any fields are not included in the validJobFields array, throw an error
+    for (const key in data) {
+      if (!this.validJobFields.includes(key)) {
+        throw new Error(`Invalid field: ${key}`);
+      }
+    }
+
+    await this.validateManagerExists(data.managerId);
+
     assert.ok(data.name, 'Name is required');
     assert.ok(data.draftingHours, 'Drafting hours are required');
     assert.ok(data.orderedDate, 'Ordered date is required');
@@ -166,18 +220,26 @@ export class JobsService {
    * @param data.notes - Additional notes about the job (optional).
    * @throws Error if any provided fields are invalid.
    */
-  private validatePartialJob(data: {
+  private async validatePartialJob(data: {
     managerId?: number;
     name?: string;
     draftingHours?: number;
     orderedDate?: string;
     notes?: string;
   }) {
+    // If any fields are not included in the validJobFields array, throw an error
+    for (const key in data) {
+      if (!this.validJobFields.includes(key)) {
+        throw new Error(`Invalid field: ${key}`);
+      }
+    }
+
     if (data.managerId !== undefined) {
       assert.ok(
         typeof data.managerId === 'number',
         'Manager ID must be a number'
       );
+      await this.validateManagerExists(data.managerId);
     }
     if (data.name !== undefined) {
       assert.ok(typeof data.name === 'string', 'Name must be a string');
@@ -203,5 +265,14 @@ export class JobsService {
         data.notes !== undefined,
       'At least one field must be provided'
     );
+  }
+
+  /**
+   * Validates that a manager with the given ID exists.
+   * @param managerId - The ID of the manager to validate.
+   * @throws Error if the manager does not exist.
+   */
+  private async validateManagerExists(managerId: number) {
+    await employeesService.getEmployeeById(managerId);
   }
 }
