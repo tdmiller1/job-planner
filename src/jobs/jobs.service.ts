@@ -1,11 +1,15 @@
 import assert from 'assert';
 import { JobsRepository } from './jobs.repository';
+import { EmployeesService } from '../employees/employees.service';
+import { EmployeesRepository } from '../employees/employees.repository';
 
 /**
  * Service for managing jobs.
  */
 export class JobsService {
   private jobsRepository: JobsRepository;
+  private employeesRepository: EmployeesRepository;
+  private employeesService: EmployeesService;
 
   /**
    * Creates an instance of JobsService.
@@ -13,6 +17,8 @@ export class JobsService {
    */
   constructor(jobsRepository: any) {
     this.jobsRepository = jobsRepository;
+    this.employeesRepository = new EmployeesRepository();
+    this.employeesService = new EmployeesService(this.employeesRepository);
   }
 
   /**
@@ -44,7 +50,7 @@ export class JobsService {
    * @throws Error if any required fields are missing or if orderedDate is not a valid ISO-8601 date time string.
    * @returns The created job.
    */
-  createJob(data: {
+  async createJob(data: {
     managerId: number;
     name: string;
     draftingHours: number;
@@ -52,6 +58,8 @@ export class JobsService {
     notes?: string;
   }) {
     this.validateFullJob(data);
+
+    await this.validateManagerExists(data.managerId);
 
     return this.jobsRepository.createJob(data);
   }
@@ -203,5 +211,14 @@ export class JobsService {
         data.notes !== undefined,
       'At least one field must be provided'
     );
+  }
+
+  /**
+   * Validates that a manager with the given ID exists.
+   * @param managerId - The ID of the manager to validate.
+   * @throws Error if the manager does not exist.
+   */
+  private async validateManagerExists(managerId: number) {
+    await this.employeesService.getEmployeeById(managerId);
   }
 }

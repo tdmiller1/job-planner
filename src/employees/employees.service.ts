@@ -1,6 +1,19 @@
 import assert from 'assert';
 import { EmployeesRepository, EmployeeWrite } from './employees.repository';
 
+// Create errors for the service to throw
+
+class EmployeeServiceError extends Error {
+  private status: number = 500;
+
+  constructor({ message, status }: { message: string; status?: number }) {
+    super();
+    this.name = 'EmployeeNotFoundError';
+    this.message = message;
+    this.status = status || this.status;
+  }
+}
+
 /**
  * Service for managing employees.
  */
@@ -28,8 +41,8 @@ export class EmployeesService {
    * @param id - The ID of the employee to retrieve.
    * @returns The employee with the given ID.
    */
-  getEmployeeById(id: number) {
-    this.validateId(id);
+  async getEmployeeById(id: number) {
+    await this.validateId(id);
     return this.employeesRepository.getEmployeeById(id);
   }
 
@@ -54,8 +67,8 @@ export class EmployeesService {
    * @throws Error if any required fields are missing.
    * @returns The updated employee.
    */
-  updateEmployee(id: number, data: EmployeeWrite) {
-    this.validateId(id);
+  async updateEmployee(id: number, data: EmployeeWrite) {
+    await this.validateId(id);
     this.validateFullEmployee(data);
     return this.employeesRepository.updateEmployee(id, data);
   }
@@ -67,8 +80,8 @@ export class EmployeesService {
    * @param data.lastName - The last name of the employee. (optional)
    * @returns The updated employee.
    */
-  partialUpdateEmployee(id: number, data: Partial<EmployeeWrite>) {
-    this.validateId(id);
+  async partialUpdateEmployee(id: number, data: Partial<EmployeeWrite>) {
+    await this.validateId(id);
     this.validatePartialEmployee(data);
     return this.employeesRepository.partialUpdateEmployee(id, data);
   }
@@ -79,8 +92,8 @@ export class EmployeesService {
    * @returns The deleted employee.
    * @throws Error if the ID is not a positive number.
    */
-  deleteEmployee(id: number) {
-    this.validateId(id);
+  async deleteEmployee(id: number) {
+    await this.validateId(id);
     return this.employeesRepository.deleteEmployee(id);
   }
 
@@ -89,8 +102,17 @@ export class EmployeesService {
    * @param id - The ID to validate.
    * @throws Error if the ID is not a positive number.
    */
-  private validateId(id: number) {
+  private async validateId(id: number) {
     assert.ok(id > 0, 'ID must be a positive number');
+
+    await this.getEmployeeById(id).catch((e) => {
+      if (e.message.includes('Expected a record, found none.')) {
+        throw new EmployeeServiceError({
+          message: `Employee with ID ${id} not found`,
+          status: 404,
+        });
+      }
+    });
   }
 
   /**

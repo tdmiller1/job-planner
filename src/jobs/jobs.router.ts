@@ -5,75 +5,60 @@ import jobsRepository from './jobs.repository';
 export const jobsRouter = Router();
 
 // Get all jobs
-jobsRouter.get('/', async (req, res) => {
+jobsRouter.get('/', async (_, res, next) => {
   const jobsService = new JobsService(jobsRepository);
-  const jobs = await jobsService.getJobs();
-  res.json({ jobs });
+
+  jobsService
+    .getJobs()
+    .then((jobs) => res.status(201).json({ jobs }))
+    .catch(next);
 });
 
 // Get job by id
-jobsRouter.get('/:id', async (req, res) => {
+jobsRouter.get('/:id', async (req, res, next) => {
   const jobsService = new JobsService(jobsRepository);
-  try {
-    res.json(await jobsService.getJobById(parseInt(req.params.id, 10)));
-  } catch (error: any) {
-    console.error(error);
-    res.status(500).json({ error: error.message });
-  }
+  jobsService
+    .getJobById(parseInt(req.params.id, 10))
+    .then((job) => res.status(200).json({ ...job }))
+    .catch(next);
 });
 
 // Create a job
-jobsRouter.post('/', async (req, res) => {
+jobsRouter.post('/', async (req, res, next) => {
   const jobsService = new JobsService(jobsRepository);
-  try {
-    const job = await jobsService.createJob(req.body);
-    res.status(201).json(job);
-  } catch (error: any) {
-    console.error(error);
-    res.status(500).json({ error: error.message });
-  }
+
+  jobsService
+    .createJob(req.body)
+    .then((job) => res.status(201).json({ ...job }))
+    .catch(next);
 });
 
 // Update a job
-jobsRouter.put('/:id', async (req, res) => {
+jobsRouter.put('/:id', async (req, res, next) => {
   const jobsService = new JobsService(jobsRepository);
-  try {
-    res.json(
-      await jobsService.updateJob(parseInt(req.params.id, 10), req.body)
-    );
-  } catch (error: any) {
-    console.error(error);
-    res.status(500).json({ error: error.message });
-  }
+
+  jobsService
+    .updateJob(parseInt(req.params.id, 10), req.body)
+    .then((job) => res.status(200).json({ ...job }))
+    .catch(next);
 });
 
 // Partially update a job
-jobsRouter.patch('/:id', async (req, res) => {
+jobsRouter.patch('/:id', async (req, res, next) => {
   const jobsService = new JobsService(jobsRepository);
-  try {
-    console.log(
-      `Received request to partially update job: ${
-        req.params.id
-      } body: ${JSON.stringify(req.body)}`
-    );
-    const updatedJob = await jobsService.partialUpdateJob(
-      parseInt(req.params.id, 10),
-      req.body
-    );
-    res.json(updatedJob);
-  } catch (error: any) {
-    console.error(error);
-    res.status(500).json({ error: error.message });
-  }
+
+  await jobsService
+    .partialUpdateJob(parseInt(req.params.id, 10), req.body)
+    .then((job) => res.status(200).json({ ...job }))
+    .catch(next);
 });
 
 // Delete a job
-jobsRouter.delete('/:id', async (req, res) => {
+jobsRouter.delete('/:id', async (req, res, next) => {
   const jobsService = new JobsService(jobsRepository);
-  try {
-    res.json(await jobsService.deleteJob(parseInt(req.params.id, 10)));
-  } catch (error: any) {
-    console.error(error);
-    res.status(500).json({ error: error.message });
-  }
+
+  jobsService
+    .deleteJob(parseInt(req.params.id, 10))
+    .then(() => res.status(204))
+    .catch(next);
 });

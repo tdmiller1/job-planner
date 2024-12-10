@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import { jobsRouter } from './jobs/jobs.router';
 import { employeesRouter } from './employees/employees.router';
+import { formattedError } from './utils/error';
 
 dotenv.config();
 
@@ -25,6 +26,13 @@ app.use((req, res, next) => {
 
 app.use('/api/jobs', jobsRouter);
 app.use('/api/employees', employeesRouter);
+
+app.use((err: any, req: any, res: any, next: any) => {
+  console.error(err.stack);
+
+  res.status(err.status || 500).send(formattedError(err));
+  next(err);
+});
 
 app.listen(PORT, () => {
   console.log(`Listening on port ${PORT}`);
