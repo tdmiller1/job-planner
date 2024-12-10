@@ -42,8 +42,8 @@ export class EmployeesService {
    * @returns The employee with the given ID.
    */
   async getEmployeeById(id: number) {
-    await this.validateId(id);
-    return this.employeesRepository.getEmployeeById(id);
+    this.validateId(id);
+    return this.getEmployeeByIdFromRepository(id);
   }
 
   /**
@@ -68,7 +68,7 @@ export class EmployeesService {
    * @returns The updated employee.
    */
   async updateEmployee(id: number, data: EmployeeWrite) {
-    await this.validateId(id);
+    await this.validateEmployeeById(id);
     this.validateFullEmployee(data);
     return this.employeesRepository.updateEmployee(id, data);
   }
@@ -81,7 +81,7 @@ export class EmployeesService {
    * @returns The updated employee.
    */
   async partialUpdateEmployee(id: number, data: Partial<EmployeeWrite>) {
-    await this.validateId(id);
+    await this.validateEmployeeById(id);
     this.validatePartialEmployee(data);
     return this.employeesRepository.partialUpdateEmployee(id, data);
   }
@@ -93,7 +93,7 @@ export class EmployeesService {
    * @throws Error if the ID is not a positive number.
    */
   async deleteEmployee(id: number) {
-    await this.validateId(id);
+    await this.validateEmployeeById(id);
     return this.employeesRepository.deleteEmployee(id);
   }
 
@@ -102,10 +102,36 @@ export class EmployeesService {
    * @param id - The ID to validate.
    * @throws Error if the ID is not a positive number.
    */
-  private async validateId(id: number) {
+  private validateId(id: number) {
     assert.ok(id > 0, 'ID must be a positive number');
+  }
 
+  /**
+   * Validates the ID of a employee and checks if the employee exists.
+   * @param id - The ID to validate.
+   * @throws Error if the ID is not a positive number or if the employee does not exist.
+   */
+  private async validateEmployeeById(id: number) {
+    this.validateId(id);
     await this.getEmployeeById(id).catch((e) => {
+      console.log('MESSAGE', e.message);
+      if (e.message.includes('Expected a record, found none.')) {
+        throw new EmployeeServiceError({
+          message: `Employee with ID ${id} not found`,
+          status: 404,
+        });
+      }
+    });
+  }
+
+  /**
+   * Retrieves a employee by its ID from the repository.
+   * @param id - The ID of the employee to retrieve.
+   * @returns The employee with the given ID.
+   */
+  private getEmployeeByIdFromRepository(id: number) {
+    return this.employeesRepository.getEmployeeById(id).catch((e) => {
+      console.log('MESSAGE', e.message);
       if (e.message.includes('Expected a record, found none.')) {
         throw new EmployeeServiceError({
           message: `Employee with ID ${id} not found`,
