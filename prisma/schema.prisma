@@ -42,15 +42,15 @@ model Job {
 }
 
 model AuditJob {
-  id            Int      @id @default(autoincrement())
+  id            Int       @id @default(autoincrement())
   action        String
-  createdAt     DateTime @default(now())
+  createdAt     DateTime  @default(now())
   // Copy of Job model
   jobId         Int?
-  updatedAt     DateTime @updatedAt
+  updatedAt     DateTime  @updatedAt
   name          String
   draftingHours Int
-  orderedDate   DateTime
+  orderedDate   DateTime?
   notes         String?
   managerId     Int
 }

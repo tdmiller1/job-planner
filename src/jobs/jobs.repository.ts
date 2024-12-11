@@ -130,7 +130,7 @@ export class JobsRepository {
   }
 
   async enableAuditTracking(
-    params: Prisma.MiddlewareParams,
+    params: { action: string; args?: Prisma.JobUpdateArgs },
     result: JobRead & { managerId: number }
   ) {
     if (!params.action || !this.getTrackableActions().includes(params.action)) {
@@ -144,7 +144,11 @@ export class JobsRepository {
         this.trackSingle(params, result);
         break;
       case 'updateMany':
-        this.trackUpdateMany(params);
+        if (params.args) {
+          this.trackUpdateMany(
+            params as { action: string; args: Prisma.JobUpdateArgs }
+          );
+        }
         break;
       case 'delete':
         this.trackSingle(params, result);
@@ -155,7 +159,7 @@ export class JobsRepository {
   }
 
   private async trackSingle(
-    params: Prisma.MiddlewareParams,
+    params: { action: string },
     result: JobRead & { managerId: number }
   ) {
     const { id: jobId, ...rest } = result;
@@ -167,7 +171,10 @@ export class JobsRepository {
     await db.auditJob.create({ data: auditJob });
   }
 
-  private async trackUpdateMany(params: Prisma.MiddlewareParams) {
+  private async trackUpdateMany(params: {
+    action: string;
+    args: Prisma.JobUpdateArgs;
+  }) {
     const updatedJobs = await db.job.findMany({
       where: params.args.where,
     });
