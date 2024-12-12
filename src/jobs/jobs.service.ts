@@ -1,7 +1,9 @@
 import assert from 'assert';
-import { JobsRepository } from './jobs.repository';
+import jobsRepository, { JobsRepository } from './jobs.repository';
 import { EmployeesService } from '../employees/employees.service';
 import { EmployeesRepository } from '../employees/employees.repository';
+import { activeJobsRepository } from '../repositories/activeJobsRepository';
+import { JobStatus } from '@prisma/client';
 
 const employeesRepository = new EmployeesRepository();
 const employeesService = new EmployeesService(employeesRepository);
@@ -22,27 +24,33 @@ class JobServiceError extends Error {
  */
 export class JobsService {
   private jobsRepository: JobsRepository;
+  private activeJobsRepository: JobsRepository;
   private validJobFields = [
     'managerId',
     'name',
     'draftingHours',
     'orderedDate',
     'notes',
+    'status',
   ];
 
   /**
    * Creates an instance of JobsService.
    * @param jobsRepository - The repository to manage job data.
    */
-  constructor(jobsRepository: any) {
+  constructor() {
     this.jobsRepository = jobsRepository;
+    this.activeJobsRepository = activeJobsRepository;
   }
 
   /**
    * Retrieves all jobs.
    * @returns An array of all jobs.
    */
-  async getJobs() {
+  async getJobs({ active }: { active?: boolean } = {}) {
+    if (active) {
+      return this.activeJobsRepository.getAllJobs();
+    }
     return this.jobsRepository.getAllJobs();
   }
 
@@ -72,6 +80,7 @@ export class JobsService {
     draftingHours: number;
     orderedDate: string;
     notes?: string;
+    status?: JobStatus;
   }) {
     await this.validateFullJob(data);
 
@@ -97,6 +106,7 @@ export class JobsService {
       draftingHours: number;
       orderedDate: string;
       notes?: string;
+      status: JobStatus;
     }
   ) {
     await this.validateJobById(id);

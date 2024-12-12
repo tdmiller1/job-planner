@@ -1,10 +1,12 @@
 import { db } from '../src/utils/db.server';
 import { MLS_SEED_DATA } from './csvToSeed';
 import { JobsRepository } from '../src/jobs/jobs.repository';
+import { JobStatus } from '@prisma/client';
 
 export type MlsSeedStructure = {
   jobs: Array<{
     name: string;
+    status: JobStatus;
     draftingHours: number;
     orderedDate: Date | string;
     notes: string;
@@ -98,12 +100,17 @@ async function seed() {
           })
         );
 
+        const randomlySelectedStatus = Object.keys(JobStatus)[
+          Math.floor(Math.random() * Object.keys(JobStatus).length)
+        ] as JobStatus;
+
         // Create Job
         const newJob = await rootTx.job.create({
           data: {
             name: job.name || '',
             draftingHours: job.draftingHours,
             orderedDate: job.orderedDate,
+            status: JobStatus[randomlySelectedStatus],
             notes: job.notes || '',
             managerId: manager.id,
           },
