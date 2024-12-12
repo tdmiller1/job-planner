@@ -1,5 +1,6 @@
-import { Prisma } from '@prisma/client';
+import { JobStatus, Prisma } from '@prisma/client';
 import { db } from '../utils/db.server';
+import { BaseRepository } from '../repositories/base';
 
 export type JobRead = {
   id: number;
@@ -8,6 +9,7 @@ export type JobRead = {
   draftingHours: number;
   notes: string | null;
   orderedDate: Date;
+  status: JobStatus;
 };
 
 type EmployeeRead = {
@@ -27,6 +29,7 @@ type JobWrite = {
   draftingHours: number;
   orderedDate: string;
   notes?: string;
+  status?: JobStatus;
 };
 
 export type CrewForJobRead = {
@@ -35,10 +38,13 @@ export type CrewForJobRead = {
   jobId: number;
 };
 
-export class JobsRepository {
-  async getAllJobs(): Promise<Array<JobWithDetails>> {
+export class JobsRepository extends BaseRepository<JobRead, JobWrite> {
+  protected where: Prisma.JobWhereInput = {};
+
+  async getAllJobs(): Promise<Array<JobRead>> {
     return await db.job
       .findMany({
+        where: this.where,
         select: {
           id: true,
           name: true,
@@ -47,6 +53,7 @@ export class JobsRepository {
           Manager: true,
           notes: true,
           orderedDate: true,
+          status: true,
           CrewForJob: {
             select: {
               employee: true,
@@ -62,7 +69,7 @@ export class JobsRepository {
       );
   }
 
-  async getJobById(id: number): Promise<JobWithDetails> {
+  async getJobById(id: number): Promise<JobRead> {
     return await db.job
       .findUniqueOrThrow({
         where: { id },
@@ -74,6 +81,7 @@ export class JobsRepository {
           Manager: true,
           notes: true,
           orderedDate: true,
+          status: true,
           CrewForJob: {
             select: {
               employee: true,

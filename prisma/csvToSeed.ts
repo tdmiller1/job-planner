@@ -27,6 +27,7 @@
 import fs from 'fs';
 import path from 'path';
 import { MlsSeedStructure } from './seed';
+import { JobStatus } from '@prisma/client';
 
 const CSV_FILE_PATH = path.resolve(__dirname, '../data/projects.csv');
 const CSV_FILE_ENCODING = 'utf8';
@@ -68,6 +69,7 @@ const MLS_SEED_DATA: MlsSeedStructure = {
 
     return {
       name: projectName?.trim(),
+      status: JobStatus.Approved, // Will be ignored later
       draftingHours: Number(draftingHours) || 0,
       orderedDate: !isNaN(Date.parse(orderedDate))
         ? new Date(orderedDate)

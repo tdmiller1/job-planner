@@ -29,12 +29,23 @@ model CrewForJob {
   job        Job?     @relation(fields: [jobId], references: [id])
 }
 
+enum JobStatus {
+  Draft
+  Planning
+  Gathering
+  Drawing
+  Reviewing
+  Approved
+  Completed
+}
+
 model Job {
   id            Int          @id @default(autoincrement())
   updatedAt     DateTime     @updatedAt
   name          String
   draftingHours Int
   orderedDate   DateTime
+  status        JobStatus    @default(Draft)
   notes         String?
   managerId     Int
   Manager       Employee     @relation(fields: [managerId], references: [id])
@@ -50,6 +61,7 @@ model AuditJob {
   updatedAt     DateTime  @updatedAt
   name          String
   draftingHours Int
+  status        JobStatus @default(Draft)
   orderedDate   DateTime?
   notes         String?
   managerId     Int
